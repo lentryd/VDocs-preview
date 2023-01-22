@@ -133,7 +133,7 @@ declare module GitHubApi {
  * @param folder папка, в которую будет сохранен файл
  * @param name название файла
  */
-export async function draw(
+export default async function draw(
   username: string,
   reponame: string,
   folder = ".",
