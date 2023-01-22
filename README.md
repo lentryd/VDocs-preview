@@ -23,7 +23,7 @@ npm i vdocs-preview -s
 ```typescript
 import createPreview from "vdocs-preview";
 
-createPreview("lentryd", "VDocs-vue");
+createPreview("lentryd", "VDocs");
 ```
 
 ## Терминал
