@@ -1,0 +1,29 @@
+{
+  "name": "vdocs-preview",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "version": "1.0.0",
+  "description": "This module creates a preview of the github repository",
+  "scripts": {
+    "test": "npm run build && node dist/index.js",
+    "build": "npm run clean && tsc && npm run copy-files",
+    "clean": "rimraf ./dist",
+    "copy-files": "copyfiles -u 1 ./src/assets/**/* ./dist"
+  },
+  "homepage": "https://lentryd.su/VDocs-preview/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lentryd/VDocs-preview.git"
+  },
+  "author": "lentryd",
+  "license": "MIT",
+  "dependencies": {
+    "canvas": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^4.1.1",
+    "typescript": "^4.9.4"
+  }
+}
