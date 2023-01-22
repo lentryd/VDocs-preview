@@ -68,7 +68,7 @@ export default async function drawPreview(
 
   // Описание
   ctx.font = "300 40px Nunito";
-  drawText(ctx, description, 80, 305, 1040, 119, 44);
+  drawText(ctx, description || "", 80, 305, 1040, 119, 44);
 
   // Статистика
   let x = 80;

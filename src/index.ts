@@ -7,9 +7,6 @@ import { cwd, argv } from "process";
 import { join, isAbsolute } from "path";
 import drawPreview, { AcceptLanguage } from "./methods/drawPreview";
 
-// Проверяем, запущен ли скрипт как самостоятельный модуль
-const runningAsScript = require.main === module;
-
 declare module GitHubApi {
   export interface Owner {
     login: string;
@@ -130,15 +127,9 @@ declare module GitHubApi {
  * Отрисовывает превью репозитория
  * @param username имя пользователя
  * @param reponame название репозитория
- * @param folder папка, в которую будет сохранен файл
- * @param name название файла
+ * @returns буфер с изображением (png image)
  */
-export default async function draw(
-  username: string,
-  reponame: string,
-  folder = ".",
-  name?: string
-) {
+export default async function draw(username: string, reponame: string) {
   // Получаем данные о репозитории
   const data = (await fetch(
     `https://api.github.com/repos/${username}/${reponame}`
@@ -155,7 +146,7 @@ export default async function draw(
   )) as GitHubApi.Owner[];
 
   // Отрисовываем превью
-  const buffer = await drawPreview(
+  return await drawPreview(
     data.owner.avatar_url,
     data.owner.login,
     data.name,
@@ -168,34 +159,31 @@ export default async function draw(
       contributors: contributors.length,
     }
   );
-
-  // Сохраняем превью
-  const filename = name || `Preview ${data.name} (${data.owner.login})`;
-  if (isAbsolute(folder)) folder = join(cwd(), folder);
-  fs.writeFileSync(join(folder, filename + ".png"), buffer);
 }
 
-if (runningAsScript) {
-  const {
-    h: hello,
-    u: username,
-    r: reponame,
-    f: folder,
-    n: fileName,
-  } = minimist(argv.slice(2));
+if (require.main === module)
+  (async () => {
+    let {
+      h: hello,
+      u: username,
+      r: reponame,
+      f: folder = ".",
+      n: fileName,
+    } = minimist(argv.slice(2));
 
-  if (hello) {
-    console.log("Hmm, everything seems to be installed.");
-    process.exit();
-  }
-
-  draw(username, reponame, folder, fileName)
-    .then(() => {
-      console.log("Done!");
+    if (hello) {
+      console.log("Hmm, everything seems to be installed.");
       process.exit();
-    })
-    .catch((err) => {
+    }
+
+    const buffer = await draw(username, reponame).catch((err) => {
       console.error(err);
       process.exit(1);
     });
-}
+
+    if (isAbsolute(folder)) folder = join(cwd(), folder);
+    if (!fileName) fileName = `Preview fro ${reponame} (${username})`;
+    if (!fileName.endsWith(".png")) fileName += ".png";
+    fs.writeFileSync(join(folder, fileName), buffer);
+    console.log("Done!");
+  })();
