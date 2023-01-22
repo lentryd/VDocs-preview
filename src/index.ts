@@ -1,56 +1,201 @@
-import * as fs from "fs";
-import * as path from "path";
-import drawImage from "./methods/drawImage";
-import { Image, registerFont, createCanvas } from "canvas";
+#!/usr/bin/env node
 
-// Регистрируем шрифт
-function fontPath(fontName: string) {
-  return path.join(__dirname, "assets/fonts", fontName);
+import * as fs from "fs";
+import fetch from "node-fetch";
+import minimist from "minimist";
+import { cwd, argv } from "process";
+import { join, isAbsolute } from "path";
+import drawPreview, { AcceptLanguage } from "./methods/drawPreview";
+
+// Проверяем, запущен ли скрипт как самостоятельный модуль
+const runningAsScript = require.main === module;
+
+declare module GitHubApi {
+  export interface Owner {
+    login: string;
+    id: number;
+    node_id: string;
+    avatar_url: string;
+    gravatar_id: string;
+    url: string;
+    html_url: string;
+    followers_url: string;
+    following_url: string;
+    gists_url: string;
+    starred_url: string;
+    subscriptions_url: string;
+    organizations_url: string;
+    repos_url: string;
+    events_url: string;
+    received_events_url: string;
+    type: string;
+    site_admin: boolean;
+  }
+
+  export interface License {
+    key: string;
+    name: string;
+    spdx_id: string;
+    url: string;
+    node_id: string;
+  }
+
+  export interface Root {
+    id: number;
+    node_id: string;
+    name: string;
+    full_name: string;
+    private: boolean;
+    owner: Owner;
+    html_url: string;
+    description: string;
+    fork: boolean;
+    url: string;
+    forks_url: string;
+    keys_url: string;
+    collaborators_url: string;
+    teams_url: string;
+    hooks_url: string;
+    issue_events_url: string;
+    events_url: string;
+    assignees_url: string;
+    branches_url: string;
+    tags_url: string;
+    blobs_url: string;
+    git_tags_url: string;
+    git_refs_url: string;
+    trees_url: string;
+    statuses_url: string;
+    languages_url: string;
+    stargazers_url: string;
+    contributors_url: string;
+    subscribers_url: string;
+    subscription_url: string;
+    commits_url: string;
+    git_commits_url: string;
+    comments_url: string;
+    issue_comment_url: string;
+    contents_url: string;
+    compare_url: string;
+    merges_url: string;
+    archive_url: string;
+    downloads_url: string;
+    issues_url: string;
+    pulls_url: string;
+    milestones_url: string;
+    notifications_url: string;
+    labels_url: string;
+    releases_url: string;
+    deployments_url: string;
+    created_at: Date;
+    updated_at: Date;
+    pushed_at: Date;
+    git_url: string;
+    ssh_url: string;
+    clone_url: string;
+    svn_url: string;
+    homepage: string;
+    size: number;
+    stargazers_count: number;
+    watchers_count: number;
+    language: string;
+    has_issues: boolean;
+    has_projects: boolean;
+    has_downloads: boolean;
+    has_wiki: boolean;
+    has_pages: boolean;
+    has_discussions: boolean;
+    forks_count: number;
+    mirror_url?: any;
+    archived: boolean;
+    disabled: boolean;
+    open_issues_count: number;
+    license: License;
+    allow_forking: boolean;
+    is_template: boolean;
+    web_commit_signoff_required: boolean;
+    topics: string[];
+    visibility: string;
+    forks: number;
+    open_issues: number;
+    watchers: number;
+    default_branch: string;
+    temp_clone_token?: any;
+    network_count: number;
+    subscribers_count: number;
+  }
 }
 
-registerFont(fontPath("Nunito-Light.ttf"), {
-  family: "Nunito",
-  weight: "300",
-});
-registerFont(fontPath("Nunito-Regular.ttf"), {
-  family: "Nunito",
-  weight: "400",
-});
-registerFont(fontPath("Nunito-Medium.ttf"), {
-  family: "Nunito",
-  weight: "500",
-});
-registerFont(fontPath("Nunito-ExtraBold.ttf"), {
-  family: "Nunito",
-  weight: "800",
-});
+/**
+ * Отрисовывает превью репозитория
+ * @param username имя пользователя
+ * @param reponame название репозитория
+ * @param folder папка, в которую будет сохранен файл
+ * @param name название файла
+ */
+export async function draw(
+  username: string,
+  reponame: string,
+  folder = ".",
+  name?: string
+) {
+  // Получаем данные о репозитории
+  const data = (await fetch(
+    `https://api.github.com/repos/${username}/${reponame}`
+  )
+    .then((res) => {
+      if (!res.ok) throw new Error(`Ошибка ${res.status} при получении данных`);
+      return res.json();
+    })
+    .catch(() => {
+      throw new Error("Cannot fetch data from GitHub API");
+    })) as GitHubApi.Root;
+  const contributors = (await fetch(data.contributors_url).then((res) =>
+    res.json()
+  )) as GitHubApi.Owner[];
 
-const canvas = createCanvas(1200, 600);
-const ctx = canvas.getContext("2d");
+  // Отрисовываем превью
+  const buffer = await drawPreview(
+    data.owner.avatar_url,
+    data.owner.login,
+    data.name,
+    data.language as AcceptLanguage,
+    data.description,
+    {
+      stars: data.stargazers_count,
+      forks: data.forks_count,
+      issues: data.open_issues_count,
+      contributors: contributors.length,
+    }
+  );
 
-// Задний фон
-ctx.fillStyle = "#FBFBFC";
-ctx.fillRect(0, 0, 1200, 600);
+  // Сохраняем превью
+  const filename = name || `Preview ${data.name} (${data.owner.login})`;
+  if (isAbsolute(folder)) folder = join(cwd(), folder);
+  fs.writeFileSync(join(folder, filename + ".png"), buffer);
+}
 
-// Аватарка
-drawImage(
-  ctx,
-  __dirname + "/assets/images/testAvatar.jpg",
-  80,
-  80,
-  180,
-  180,
-  20
-);
+if (runningAsScript) {
+  const {
+    h: hello,
+    u: username,
+    r: reponame,
+    f: folder,
+    n: fileName,
+  } = minimist(argv.slice(2));
 
-// Имя пользователя
-ctx.fillStyle = "#000000";
-ctx.font = "500 60px Nunito";
-ctx.fillText("lentryd", 300, 80 + 60 + 32.5);
+  if (hello) {
+    console.log("Hmm, everything seems to be installed.");
+    process.exit();
+  }
 
-// Проект
-ctx.fillStyle = "#000000";
-ctx.font = "800 60px Nunito";
-ctx.fillText("NetShoolApi", 300, 80 + 60 + 10 + 60 + 10);
-
-fs.writeFileSync("out.png", canvas.toBuffer("image/png"));
+  draw(username, reponame, folder, fileName)
+    .then(() => {
+      console.log("Done!");
+      process.exit();
+    })
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

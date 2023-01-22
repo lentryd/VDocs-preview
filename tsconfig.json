@@ -12,6 +12,7 @@
     "esModuleInterop": true,
     "strictNullChecks": true,
     "moduleResolution": "node",
+    "resolveJsonModule": true,
   },
   "lib": [
     "es2015"

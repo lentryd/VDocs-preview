@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "description": "This module creates a preview of the github repository",
   "scripts": {
-    "test": "npm run build && node dist/index.js",
+    "test": "npm run build && node dist/index.js -u lentryd -r VDocs-preview",
     "build": "npm run clean && tsc && npm run copy-files",
     "clean": "rimraf ./dist",
     "copy-files": "copyfiles -u 1 ./src/assets/**/* ./dist"
@@ -18,10 +18,14 @@
   "author": "lentryd",
   "license": "MIT",
   "dependencies": {
-    "canvas": "^2.7.0"
+    "canvas": "^2.10.2",
+    "minimist": "^1.2.7",
+    "node-fetch": "^2.6.8"
   },
   "devDependencies": {
+    "@types/minimist": "^1.2.2",
     "@types/node": "^18.11.18",
+    "@types/node-fetch": "^2.6.2",
     "copyfiles": "^2.4.1",
     "rimraf": "^4.1.1",
     "typescript": "^4.9.4"
