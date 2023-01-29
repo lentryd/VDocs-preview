@@ -1,9 +1,9 @@
 import { join } from "path";
-import colors from "../assets/colors.json";
 import drawText from "./drawText";
 import drawImage from "./drawImage";
 import drawBadge from "./drawBadge";
 import { registerFont, createCanvas } from "canvas";
+import drawLanguages, { LanguagesObject } from "./drawLanguages";
 
 // Путь к шрифтам
 function fontPath(fontName: string) {
@@ -28,13 +28,11 @@ registerFont(fontPath("Nunito-ExtraBold.ttf"), {
   weight: "800",
 });
 
-export type AcceptLanguage = keyof typeof colors;
-
 export default async function drawPreview(
   avatar: string,
   username: string,
   reponame: string,
-  language: AcceptLanguage,
+  languages: LanguagesObject,
   description: string,
   stats: {
     stars: number;
@@ -86,10 +84,7 @@ export default async function drawPreview(
   );
 
   // Язык программирования
-  if (language in colors) {
-    ctx.fillStyle = colors[language].color || "transparent";
-    ctx.fillRect(0, 576, 1200, 24);
-  }
+  await drawLanguages(ctx, 0, 576, languages);
 
   return canvas.toBuffer("image/png");
 }

@@ -3,9 +3,10 @@
 import * as fs from "fs";
 import fetch from "node-fetch";
 import minimist from "minimist";
+import drawPreview from "./methods/drawPreview";
 import { cwd, argv } from "process";
 import { join, isAbsolute } from "path";
-import drawPreview, { AcceptLanguage } from "./methods/drawPreview";
+import { LanguagesObject } from "./methods/drawLanguages";
 
 declare module GitHubApi {
   export interface Owner {
@@ -144,13 +145,16 @@ export default async function draw(username: string, reponame: string) {
   const contributors = (await fetch(data.contributors_url).then((res) =>
     res.json()
   )) as GitHubApi.Owner[];
+  const languages = (await fetch(data.languages_url).then((res) =>
+    res.json()
+  )) as LanguagesObject;
 
   // Отрисовываем превью
   return await drawPreview(
     data.owner.avatar_url,
     data.owner.login,
     data.name,
-    data.language as AcceptLanguage,
+    languages,
     data.description,
     {
       stars: data.stargazers_count,
