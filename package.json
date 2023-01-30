@@ -2,7 +2,7 @@
   "name": "vdocs-preview",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "This module creates a preview of the github repository",
   "scripts": {
     "test": "npm run build && node dist/index.js -u lentryd -r VDocs-preview",
